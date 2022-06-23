@@ -1,45 +1,47 @@
+from typing import Literal
 from bs4 import BeautifulSoup
 #from PIL import Image
 import requests
 #import imagehash
 
-def get_posts(url, enable_cache, max_posts=5, check_extensions=[]):
+CACHE_FILE = "cache.html"
+DEFAULT_MAX_POSTS = 5
+
+class Post:
+  def __init__(self, post_link: str, image_url:str, post_title:str):
+    self.post_link = post_link
+    self.image_url = image_url
+    self.post_title = post_title
+
+def get_posts(user: str, enable_cache: bool, max_posts: int = DEFAULT_MAX_POSTS, check_extensions: list[Literal['.png', '.jpg', '.jpeg']] = ['.png']) -> list[Post]:
  # newgrounds has no easy way to get the extension of a file
  # currently assumes png, implement check_extensions later
  # or find a better way of grabbing extension
 
- cachefile = "cache.html"
  #enable_cache = True
-
- urlcontent = ""
+ url = "https://" + user + ".newgrounds.com/art/"
+ url_content = ""
 
  if enable_cache:
   try:
-   with open(cachefile, "rb") as f:
+   with open(CACHE_FILE, "rb") as f:
     print("Cache Found, reading from cache")
-    urlcontent = f.read()
+    url_content = str(f.read(), 'UTF-8')
   except FileNotFoundError:
    print("No Cache, grabbing from web")
-   urlcontent = requests.get(url).content
-   with open(cachefile, "xb") as f:
-    f.write(urlcontent)
+   url_content = str(requests.get(url).content, 'UTF-8')
+   with open(CACHE_FILE, "xb") as f:
+    f.write(bytes(url_content, 'UTF-8'))
  else:
   print("Cache Disabled, we do it live")
-  urlcontent = requests.get(url).content
+  url_content = str(requests.get(url).content, 'UTF-8')
  #
 
- soup = BeautifulSoup(urlcontent, "html.parser")
+ soup = BeautifulSoup(url_content, "html.parser")
  foundarray = ""
 
- for child in soup.find_all("script"):
-  stch = str(child)
-  itpos = stch.find("\"items\": [")
-  if itpos != -1:
-
-   #print(child)
-   stchp = stch[itpos+9:]
-   stchprbp = stchp.find("]")
-   foundarray = stchp[:stchprbp+1].replace("\\n", "").replace("\\t", "").replace("\\", "")
+ for child in soup.find_all("a"):
+  str(child)
  #
 
  arrsplit = foundarray.splitlines()
@@ -51,7 +53,7 @@ def get_posts(url, enable_cache, max_posts=5, check_extensions=[]):
    newsplit.append(line.strip()[1:-2])
   numer = numer + 1
  #
- print(urlcontent)
+
  newsplit.pop()
  newsplit[-1] = newsplit[-1] + ">"
 
@@ -74,9 +76,12 @@ def get_posts(url, enable_cache, max_posts=5, check_extensions=[]):
    image_url = thumbref.replace("thumbnails", "images").replace(".png", "_" + artist_name + "_" + art_name + ".png").split("?")[0]
    #im = Image.open(requests.get(image_url, stream=True).raw)
    #img_hash = imagehash.whash(im)
-   ret_list.append([sshref, image_url, post_title])
+   
+   new_post = Post(sshref, image_url, post_title)
+   ret_list.append(new_post)
   #snumer += 1
  return(ret_list[:max_posts])
 #
-
-print(get_posts("https://***REMOVED***.newgrounds.com/art/", True, 5, []))
+def a_sum():
+  return 2
+#
